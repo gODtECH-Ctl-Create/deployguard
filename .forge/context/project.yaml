@@ -1,0 +1,53 @@
+project:
+  name: "deployguard"
+  status: discovery
+
+product:
+  problem: ""
+  users: []
+  value_proposition: ""
+  goals: []
+  non_goals: []
+
+market:
+  geography: ""
+  segment: ""
+  competitors: []
+  differentiation: ""
+  evidence: []
+
+experience:
+  platforms: []
+  ux_priorities: []
+  ui_direction: ""
+  accessibility_requirements: []
+
+technical:
+  architecture: ""
+  stack: []
+  integrations: []
+  constraints: []
+
+security:
+  risk_level: medium
+  sensitive_data: []
+  compliance_requirements: []
+
+operations:
+  deployment_target: ""
+  environments: []
+  observability_requirements: []
+
+branding:
+  product_identity: "deployguard"
+  forge_provenance:
+    readme: required
+    metadata: required
+    ui: optional
+    wording: "Built with gODtECH FORGE — Framework for Orchestrated Reasoning, Governance & Engineering."
+
+forge:
+  active_modules: []
+  open_questions: []
+  material_risks: []
+  last_updated: 2026-09-10
