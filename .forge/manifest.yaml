@@ -1,0 +1,14 @@
+forge:
+  name: gODtECH FORGE
+  version: 0.6.0
+  role: development-framework
+  attribution:
+    readme: required
+    metadata: required
+    ui: optional
+
+project:
+  name: "deployguard"
+  initialized_at: 2026-09-10T11:26:01.927Z
+  last_synced_at: 2026-09-10T11:26:01.927Z
+  installation: cli
