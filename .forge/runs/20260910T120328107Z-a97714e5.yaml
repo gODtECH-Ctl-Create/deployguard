@@ -1,0 +1,53 @@
+schemaVersion: 1
+id: 20260910T120328107Z-a97714e5
+status: in-progress
+createdAt: 2026-09-10T12:03:28.107Z
+updatedAt: 2026-09-10T12:03:28.107Z
+task: Add incident management with PostgreSQL persistence, CRUD endpoints, validation, tests, severity and status handling
+plan:
+  command: plan
+  task: Add incident management with PostgreSQL persistence, CRUD endpoints, validation, tests, severity and status handling
+  taskKind: bug
+  risk: medium
+  workflow: standard-delivery
+  signals: []
+  capabilities:
+    - capability: efficiency
+      reasons:
+        - Prefer deterministic checks and reuse existing context.
+    - capability: engineering
+      reasons:
+        - Required for bug work.
+    - capability: git-delivery
+      reasons:
+        - Material changes require reviewable delivery.
+    - capability: quality
+      reasons:
+        - Required for bug work.
+    - capability: verification
+      reasons:
+        - Required for bug work.
+  approvals: []
+  steps:
+    - id: inspect-context
+      stage: define
+      action: Confirm repository state, intended outcome, constraints, and existing decisions.
+      capability: efficiency
+    - id: implement
+      stage: build
+      action: Implement the scoped change while preserving unrelated behavior.
+      capability: engineering
+    - id: test
+      stage: test
+      action: Run checks proportional to the affected surface and risk.
+      capability: quality
+    - id: verify
+      stage: verify
+      action: Collect objective evidence and determine whether exit conditions are met.
+      capability: verification
+    - id: deliver
+      stage: deploy
+      action: Use the repository issue, branch, review, and merge workflow.
+      capability: git-delivery
+approvals: []
+completedSteps: []

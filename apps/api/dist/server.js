@@ -1,32 +1,35 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const cors_1 = __importDefault(require("cors"));
-const express_1 = __importDefault(require("express"));
 const pg_1 = require("pg");
+const app_1 = require("./app");
+const incidents_1 = require("./incidents");
 const port = Number(process.env.PORT ?? 4000);
 const pool = new pg_1.Pool({
     connectionString: process.env.DATABASE_URL ?? "postgresql://deployguard:deployguard@localhost:5432/deployguard"
 });
-const app = (0, express_1.default)();
-app.use((0, cors_1.default)());
-app.use(express_1.default.json());
-app.get("/health", async (_request, response) => {
-    try {
-        await pool.query("SELECT 1");
-        response.json({ status: "ok", database: "connected" });
-    }
-    catch {
-        response.status(503).json({ status: "degraded", database: "unavailable" });
-    }
-});
-app.get("/", (_request, response) => {
-    response.json({ name: "DeployGuard API", version: "0.1.0" });
-});
+const repository = new incidents_1.PostgresIncidentRepository(pool);
+const app = (0, app_1.createApp)(repository);
 const server = app.listen(port, () => {
     console.log(`DeployGuard API listening on port ${port}`);
+});
+const initialize = async () => {
+    for (let attempt = 1; attempt <= 10; attempt += 1) {
+        try {
+            await repository.initialize();
+            return;
+        }
+        catch (error) {
+            if (attempt === 10)
+                throw error;
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+    }
+};
+initialize().catch((error) => {
+    console.error("Unable to initialize database", error);
+    server.close();
+    void pool.end();
+    process.exitCode = 1;
 });
 const shutdown = async () => {
     server.close();
