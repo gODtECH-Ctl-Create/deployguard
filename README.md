@@ -29,7 +29,8 @@ The result is a traceable path from framework bootstrap to a working product sli
 | Forge initialized | `5b863c4`, `.forge/manifest.yaml` | Added governed context, provenance, workflow, policy, and verification surfaces. |
 | DeployGuard baseline established | `ab59830` | Created the Next.js, TypeScript API, PostgreSQL, and Docker Compose product foundation. |
 | Incident lifecycle delivered | `b307391` | Added persisted incident CRUD, boundary validation, resolution timestamps, and isolated API tests. |
-| Incident write protection | current branch | Added API-key protection for incident creation, update, and deletion while keeping health and read endpoints public. |
+| Incident write protection | `e552e0e` | Added API-key protection for incident creation, update, and deletion while keeping health and read endpoints public. |
+| CI verification | current branch | Adds GitHub Actions checks for install, type-check, focused API tests, and build. |
 
 The measurable result so far is a verified backend slice rather than a production performance claim: five incident endpoints, four severity values, three status values, one PostgreSQL-backed repository, and focused API tests covering health, write authentication, validation and the incident lifecycle.
 
@@ -68,6 +69,17 @@ The route layer is separated from the repository so it can be tested without a l
 
 ```bash
 npm run test --workspace=@deployguard/api
+```
+
+## Continuous integration
+
+DeployGuard uses GitHub Actions to verify pull requests and pushes to `main`. The CI workflow runs the same core checks expected before merging:
+
+```bash
+npm ci
+npm run typecheck
+npm run test --workspace=@deployguard/api
+npm run build
 ```
 
 To run the applications directly, install Node.js 22+, start PostgreSQL, and run:
