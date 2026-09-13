@@ -29,9 +29,8 @@ The result is a traceable path from framework bootstrap to a working product sli
 | Forge initialized | `5b863c4`, `.forge/manifest.yaml` | Added governed context, provenance, workflow, policy, and verification surfaces. |
 | DeployGuard baseline established | `ab59830` | Created the Next.js, TypeScript API, PostgreSQL, and Docker Compose product foundation. |
 | Incident lifecycle delivered | `b307391` | Added persisted incident CRUD, boundary validation, resolution timestamps, and isolated API tests. |
-| Incident write protection | current branch | Added API-key protection for incident creation, update, and deletion while keeping health and read endpoints public. |
 
-The measurable result so far is a verified backend slice rather than a production performance claim: five incident endpoints, four severity values, three status values, one PostgreSQL-backed repository, and focused API tests covering health, write authentication, validation and the incident lifecycle.
+The measurable result so far is a verified backend slice rather than a production performance claim: five incident endpoints, four severity values, three status values, one PostgreSQL-backed repository, and three focused API tests covering health, validation and the incident lifecycle.
 
 ## Run locally with Docker Compose
 
@@ -45,21 +44,12 @@ Open [http://localhost:3000](http://localhost:3000) for the dashboard. The API i
 
 The API now provides a PostgreSQL-backed incident lifecycle under `/incidents`:
 
-- `POST /incidents` creates an incident and requires an API key.
+- `POST /incidents` creates an incident.
 - `GET /incidents` lists incidents, and `GET /incidents/:id` returns one incident.
-- `PATCH /incidents/:id` updates an incident and requires an API key.
-- `DELETE /incidents/:id` removes an incident and requires an API key.
+- `PATCH /incidents/:id` updates an incident.
+- `DELETE /incidents/:id` removes an incident.
 
 Incident input is validated at the HTTP boundary. Severity accepts `low`, `medium`, `high`, or `critical`; status accepts `open`, `investigating`, or `resolved`. Resolving an incident records `resolved_at`, and the API creates the `incidents` table during startup when it does not already exist.
-
-Set `DEPLOYGUARD_API_KEY` for write access. Clients can send the key with either `x-api-key` or `Authorization: Bearer <key>`. Docker Compose provides a local-only value:
-
-```bash
-curl -X POST http://localhost:4000/incidents \
-  -H "content-type: application/json" \
-  -H "x-api-key: local-dev-api-key" \
-  -d '{"title":"Checkout outage","description":"Payments are failing","severity":"high"}'
-```
 
 The route layer is separated from the repository so it can be tested without a live database. API tests cover creation, retrieval, updates, deletion, validation errors, missing records, and resolution timestamps:
 
@@ -76,7 +66,7 @@ npm run dev
 
 ## Current status
 
-**Working benchmark slice.** The API build, typecheck, and focused tests are available locally. The web dashboard and Docker Compose path are present. Incident writes now require an API key, while broader user authentication, role-based authorization, migrations, production observability, and deployment automation remain outside the current scope.
+**Working benchmark slice.** The API build, typecheck, and focused tests are available locally. The web dashboard and Docker Compose path are present, while authentication, authorization, migrations, production observability, and deployment automation remain outside the current scope.
 
 ## Project map
 

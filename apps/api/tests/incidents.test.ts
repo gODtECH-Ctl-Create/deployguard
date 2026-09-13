@@ -30,12 +30,10 @@ class MemoryIncidentRepository implements IncidentRepository {
 describe("incident API", () => {
   let repository: MemoryIncidentRepository;
   let app: ReturnType<typeof createApp>;
-  const apiKey = "test-api-key";
-  const auth = { "x-api-key": apiKey };
 
   beforeEach(() => {
     repository = new MemoryIncidentRepository();
-    app = createApp(repository, { apiKey });
+    app = createApp(repository);
   });
 
   it("preserves the health endpoint", async () => {
@@ -44,33 +42,23 @@ describe("incident API", () => {
     expect(response.body).toEqual({ status: "ok", database: "connected" });
   });
 
-  it("keeps incident reads public and requires an API key for writes", async () => {
-    expect((await request(app).get("/incidents")).status).toBe(200);
-    expect((await request(app).post("/incidents").send({ title: "Blocked", description: "Missing key", severity: "low" })).status).toBe(401);
-    expect((await request(app).post("/incidents").set("x-api-key", "wrong").send({ title: "Blocked", description: "Wrong key", severity: "low" })).status).toBe(401);
-
-    const unconfiguredApp = createApp(repository);
-    const unavailable = await request(unconfiguredApp).post("/incidents").set(auth).send({ title: "Blocked", description: "No configured key", severity: "low" });
-    expect(unavailable.status).toBe(503);
-  });
-
   it("validates create input and creates incidents", async () => {
-    const invalid = await request(app).post("/incidents").set(auth).send({ title: "Broken" });
+    const invalid = await request(app).post("/incidents").send({ title: "Broken" });
     expect(invalid.status).toBe(400);
-    const created = await request(app).post("/incidents").set(auth).send({ title: "Checkout outage", description: "Payments are failing", severity: "high" });
+    const created = await request(app).post("/incidents").send({ title: "Checkout outage", description: "Payments are failing", severity: "high" });
     expect(created.status).toBe(201);
     expect(created.body.status).toBe("open");
   });
 
   it("lists, gets, updates and deletes incidents", async () => {
-    const created = await request(app).post("/incidents").set(auth).send({ title: "Queue delay", description: "Workers are behind", severity: "medium" });
+    const created = await request(app).post("/incidents").send({ title: "Queue delay", description: "Workers are behind", severity: "medium" });
     const id = created.body.id;
     expect((await request(app).get("/incidents")).body).toHaveLength(1);
     expect((await request(app).get(`/incidents/${id}`)).status).toBe(200);
-    const updated = await request(app).patch(`/incidents/${id}`).set(auth).send({ status: "resolved" });
+    const updated = await request(app).patch(`/incidents/${id}`).send({ status: "resolved" });
     expect(updated.status).toBe(200);
     expect(updated.body.resolved_at).toBeTruthy();
-    expect((await request(app).delete(`/incidents/${id}`).set(auth)).status).toBe(204);
+    expect((await request(app).delete(`/incidents/${id}`)).status).toBe(204);
     expect((await request(app).get(`/incidents/${id}`)).status).toBe(404);
   });
 });
