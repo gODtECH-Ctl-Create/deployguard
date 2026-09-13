@@ -63,6 +63,13 @@ export function createApp(repository: IncidentRepository, options: AppOptions = 
     return incident ? response.json(incident) : response.status(404).json({ error: "Incident not found" });
   });
 
+  app.get("/incidents/:id/audit", async (request, response) => {
+    const id = routeParam(request.params.id);
+    const incident = await repository.get(id);
+    if (!incident) return response.status(404).json({ error: "Incident not found" });
+    return response.json(await repository.listAuditEvents(id));
+  });
+
   app.patch("/incidents/:id", protectIncidentWrite, async (request, response) => {
     const error = validateIncidentInput(request.body, true);
     if (error) return response.status(400).json({ error });

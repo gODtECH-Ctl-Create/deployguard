@@ -1,14 +1,16 @@
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createApp } from "../src/app";
-import { type CreateIncidentInput, type Incident, type IncidentRepository, type UpdateIncidentInput } from "../src/incidents";
+import { type CreateIncidentInput, type Incident, type IncidentAuditAction, type IncidentAuditEvent, type IncidentRepository, type UpdateIncidentInput } from "../src/incidents";
 
 class MemoryIncidentRepository implements IncidentRepository {
   incidents: Incident[] = [];
+  auditEvents: IncidentAuditEvent[] = [];
   async initialize() {}
   async create(input: CreateIncidentInput) {
     const incident: Incident = { ...input, status: input.status ?? "open", id: crypto.randomUUID(), created_at: new Date().toISOString(), resolved_at: null };
     this.incidents.push(incident);
+    this.recordAuditEvent(incident.id, "created", { severity: incident.severity, status: incident.status });
     return incident;
   }
   async list() { return this.incidents; }
@@ -18,12 +20,27 @@ class MemoryIncidentRepository implements IncidentRepository {
     if (!incident) return null;
     Object.assign(incident, input);
     if (input.status === "resolved" && input.resolved_at === undefined) incident.resolved_at = new Date().toISOString();
+    this.recordAuditEvent(id, "updated", input as Record<string, unknown>);
     return incident;
   }
   async delete(id: string) {
     const before = this.incidents.length;
     this.incidents = this.incidents.filter((incident) => incident.id !== id);
-    return this.incidents.length < before;
+    const deleted = this.incidents.length < before;
+    if (deleted) this.recordAuditEvent(id, "deleted", {});
+    return deleted;
+  }
+  async listAuditEvents(incidentId: string) {
+    return this.auditEvents.filter((event) => event.incident_id === incidentId);
+  }
+  private recordAuditEvent(incidentId: string, action: IncidentAuditAction, details: Record<string, unknown>) {
+    this.auditEvents.unshift({
+      id: crypto.randomUUID(),
+      incident_id: incidentId,
+      action,
+      details,
+      created_at: new Date().toISOString()
+    });
   }
 }
 
@@ -72,5 +89,21 @@ describe("incident API", () => {
     expect(updated.body.resolved_at).toBeTruthy();
     expect((await request(app).delete(`/incidents/${id}`).set(auth)).status).toBe(204);
     expect((await request(app).get(`/incidents/${id}`)).status).toBe(404);
+  });
+
+  it("records incident audit events for create, update and delete", async () => {
+    const created = await request(app).post("/incidents").set(auth).send({ title: "Database lag", description: "Replica is behind", severity: "critical" });
+    const id = created.body.id;
+
+    await request(app).patch(`/incidents/${id}`).set(auth).send({ status: "investigating" });
+
+    const audit = await request(app).get(`/incidents/${id}/audit`);
+    expect(audit.status).toBe(200);
+    expect(audit.body.map((event: IncidentAuditEvent) => event.action)).toEqual(["updated", "created"]);
+    expect(audit.body[0].details).toEqual({ status: "investigating" });
+
+    await request(app).delete(`/incidents/${id}`).set(auth);
+    expect(repository.auditEvents.map((event) => event.action)).toEqual(["deleted", "updated", "created"]);
+    expect((await request(app).get(`/incidents/${id}/audit`)).status).toBe(404);
   });
 });

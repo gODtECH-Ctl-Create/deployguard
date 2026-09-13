@@ -47,10 +47,13 @@ The API now provides a PostgreSQL-backed incident lifecycle under `/incidents`:
 
 - `POST /incidents` creates an incident and requires an API key.
 - `GET /incidents` lists incidents, and `GET /incidents/:id` returns one incident.
+- `GET /incidents/:id/audit` lists audit events for an incident.
 - `PATCH /incidents/:id` updates an incident and requires an API key.
 - `DELETE /incidents/:id` removes an incident and requires an API key.
 
-Incident input is validated at the HTTP boundary. Severity accepts `low`, `medium`, `high`, or `critical`; status accepts `open`, `investigating`, or `resolved`. Resolving an incident records `resolved_at`, and the API creates the `incidents` table during startup when it does not already exist.
+Incident input is validated at the HTTP boundary. Severity accepts `low`, `medium`, `high`, or `critical`; status accepts `open`, `investigating`, or `resolved`. Resolving an incident records `resolved_at`, and the API creates the `incidents` and `incident_audit_events` tables during startup when they do not already exist.
+
+Incident audit events are append-only records for `created`, `updated`, and `deleted` actions. They are stored with the incident ID, action, JSON details, and timestamp so operators can inspect lifecycle changes without changing the incident response shape.
 
 Set `DEPLOYGUARD_API_KEY` for write access. Clients can send the key with either `x-api-key` or `Authorization: Bearer <key>`. Docker Compose provides a local-only value:
 
@@ -61,7 +64,7 @@ curl -X POST http://localhost:4000/incidents \
   -d '{"title":"Checkout outage","description":"Payments are failing","severity":"high"}'
 ```
 
-The route layer is separated from the repository so it can be tested without a live database. API tests cover creation, retrieval, updates, deletion, validation errors, missing records, and resolution timestamps:
+The route layer is separated from the repository so it can be tested without a live database. API tests cover creation, retrieval, updates, deletion, audit events, validation errors, missing records, and resolution timestamps:
 
 ```bash
 npm run test --workspace=@deployguard/api
