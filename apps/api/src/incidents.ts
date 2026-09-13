@@ -16,6 +16,16 @@ export type Incident = {
   resolved_at: string | null;
 };
 
+export type IncidentAuditAction = "created" | "updated" | "deleted";
+
+export type IncidentAuditEvent = {
+  id: string;
+  incident_id: string;
+  action: IncidentAuditAction;
+  details: Record<string, unknown>;
+  created_at: string;
+};
+
 export type CreateIncidentInput = {
   title: string;
   description: string;
@@ -34,9 +44,11 @@ export type IncidentRepository = {
   get(id: string): Promise<Incident | null>;
   update(id: string, input: UpdateIncidentInput): Promise<Incident | null>;
   delete(id: string): Promise<boolean>;
+  listAuditEvents(incidentId: string): Promise<IncidentAuditEvent[]>;
 };
 
 const columns = "id, title, description, severity, status, created_at, resolved_at";
+const auditColumns = "id, incident_id, action, details, created_at";
 
 export class PostgresIncidentRepository implements IncidentRepository {
   constructor(private readonly pool: Pool) {}
@@ -53,6 +65,19 @@ export class PostgresIncidentRepository implements IncidentRepository {
         resolved_at TIMESTAMPTZ
       )
     `);
+    await this.pool.query(`
+      CREATE TABLE IF NOT EXISTS incident_audit_events (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        incident_id UUID NOT NULL,
+        action TEXT NOT NULL CHECK (action IN ('created', 'updated', 'deleted')),
+        details JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await this.pool.query(`
+      CREATE INDEX IF NOT EXISTS incident_audit_events_incident_id_created_at_idx
+      ON incident_audit_events (incident_id, created_at DESC)
+    `);
   }
 
   async create(input: CreateIncidentInput) {
@@ -62,7 +87,12 @@ export class PostgresIncidentRepository implements IncidentRepository {
        RETURNING ${columns}`,
       [input.title, input.description, input.severity, input.status ?? "open"]
     );
-    return result.rows[0];
+    const incident = result.rows[0];
+    await this.recordAuditEvent(incident.id, "created", {
+      severity: incident.severity,
+      status: incident.status
+    });
+    return incident;
   }
 
   async list() {
@@ -93,12 +123,33 @@ export class PostgresIncidentRepository implements IncidentRepository {
       `UPDATE incidents SET ${assignments} WHERE id = $${values.length + 1} RETURNING ${columns}`,
       [...values, id]
     );
-    return result.rows[0] ?? null;
+    const incident = result.rows[0] ?? null;
+    if (incident) {
+      await this.recordAuditEvent(incident.id, "updated", Object.fromEntries(fields));
+    }
+    return incident;
   }
 
   async delete(id: string) {
     const result = await this.pool.query("DELETE FROM incidents WHERE id = $1", [id]);
-    return (result.rowCount ?? 0) > 0;
+    const deleted = (result.rowCount ?? 0) > 0;
+    if (deleted) await this.recordAuditEvent(id, "deleted", {});
+    return deleted;
+  }
+
+  async listAuditEvents(incidentId: string) {
+    const result = await this.pool.query<IncidentAuditEvent>(
+      `SELECT ${auditColumns} FROM incident_audit_events WHERE incident_id = $1 ORDER BY created_at DESC`,
+      [incidentId]
+    );
+    return result.rows;
+  }
+
+  private async recordAuditEvent(incidentId: string, action: IncidentAuditAction, details: Record<string, unknown>) {
+    await this.pool.query(
+      `INSERT INTO incident_audit_events (incident_id, action, details) VALUES ($1, $2, $3::jsonb)`,
+      [incidentId, action, JSON.stringify(details)]
+    );
   }
 }
 
