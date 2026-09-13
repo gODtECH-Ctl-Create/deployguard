@@ -8,7 +8,7 @@ const pool = new Pool({
 });
 
 const repository = new PostgresIncidentRepository(pool);
-const app = createApp(repository, { apiKey: process.env.DEPLOYGUARD_API_KEY });
+const app = createApp(repository);
 
 const server = app.listen(port, () => {
   console.log(`DeployGuard API listening on port ${port}`);

@@ -22,7 +22,6 @@ services:
     environment:
       PORT: 4000
       DATABASE_URL: postgresql://deployguard:deployguard@postgres:5432/deployguard
-      DEPLOYGUARD_API_KEY: local-dev-api-key
     ports:
       - "4000:4000"
     depends_on:
