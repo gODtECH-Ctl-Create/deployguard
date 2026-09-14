@@ -30,7 +30,8 @@ The result is a traceable path from framework bootstrap to a working product sli
 | DeployGuard baseline established | `ab59830` | Created the Next.js, TypeScript API, PostgreSQL, and Docker Compose product foundation. |
 | Incident lifecycle delivered | `b307391` | Added persisted incident CRUD, boundary validation, resolution timestamps, and isolated API tests. |
 | Incident write protection | `e552e0e` | Added API-key protection for incident creation, update, and deletion while keeping health and read endpoints public. |
-| CI verification | current branch | Adds GitHub Actions checks for install, type-check, focused API tests, and build. |
+| CI verification | `d4af54d` | Adds GitHub Actions checks for install, type-check, focused API tests, and build. |
+| Kubernetes runtime probes | current branch | Adds baseline Kubernetes manifests for API, web, PostgreSQL, services, and runtime probes. |
 
 The measurable result so far is a verified backend slice rather than a production performance claim: five incident endpoints, four severity values, three status values, one PostgreSQL-backed repository, and focused API tests covering health, write authentication, validation and the incident lifecycle.
 
@@ -91,7 +92,7 @@ npm run dev
 
 ## Current status
 
-**Working benchmark slice.** The API build, typecheck, and focused tests are available locally. The web dashboard and Docker Compose path are present. Incident writes now require an API key, while broader user authentication, role-based authorization, migrations, production observability, and deployment automation remain outside the current scope.
+**Working benchmark slice.** The API build, typecheck, and focused tests are available locally. The web dashboard and Docker Compose path are present. Incident writes now require an API key, while broader user authentication, role-based authorization, migrations, production observability, and production deployment automation remain outside the current scope. Baseline Kubernetes manifests and runtime probes are available for cluster validation, but they are not a production SLO claim.
 
 ## Project map
 
@@ -101,4 +102,6 @@ apps/web/       Next.js dashboard
 .forge/         FORGE context, workflows, policies, provenance, and run records
 docs/           Product and Forge integration documentation
 docker-compose.yml
+k8s/base/       Baseline Kubernetes manifests and runtime probes
+docs/KUBERNETES.md
 ```
