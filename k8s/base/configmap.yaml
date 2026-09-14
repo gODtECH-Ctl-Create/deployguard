@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: deployguard-config
+  namespace: deployguard
+  labels:
+    app.kubernetes.io/name: deployguard
+data:
+  API_PORT: "4000"
+  WEB_PORT: "3000"
+  API_URL: "http://deployguard-api:4000"
